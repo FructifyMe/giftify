@@ -1,0 +1,24 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches: [ main, feature/* ]
+    paths:
+      - 'supabase/functions/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy Edge Functions
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: |
+          supabase functions deploy send-group-invite --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

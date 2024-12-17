@@ -29,26 +29,54 @@ export async function createGroup(name: string, description?: string) {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
-    .from('gift_groups')
-    .insert({
-      name,
-      description,
-      created_by: user.user.id,
-    })
-    .select()
-    .single();
+  try {
+    // First, create the group
+    const { data: groupData, error: groupError } = await supabase
+      .from('gift_groups')
+      .insert({
+        name,
+        description,
+        created_by: user.user.id,
+      })
+      .select()
+      .single();
 
-  if (error) throw error;
+    if (groupError) {
+      console.error('Error creating group:', groupError);
+      throw new Error(groupError.message);
+    }
 
-  // Add creator as admin
-  await supabase.from('group_members').insert({
-    group_id: data.id,
-    user_id: user.user.id,
-    role: 'admin',
-  });
+    if (!groupData) {
+      throw new Error('Failed to create group');
+    }
 
-  return data;
+    // Then, add the creator as an admin member
+    const { error: memberError } = await supabase
+      .from('group_members')
+      .insert({
+        group_id: groupData.id,
+        user_id: user.user.id,
+        role: 'admin',
+      });
+
+    if (memberError) {
+      console.error('Error adding group member:', memberError);
+      // Try to clean up the group if member creation fails
+      await supabase.from('gift_groups').delete().eq('id', groupData.id);
+      throw new Error(memberError.message);
+    }
+
+    return {
+      id: groupData.id,
+      name: groupData.name,
+      description: groupData.description,
+      createdBy: groupData.created_by,
+      createdAt: groupData.created_at,
+    };
+  } catch (error) {
+    console.error('Error in createGroup:', error);
+    throw error;
+  }
 }
 
 export async function getUserGroups() {
@@ -77,11 +105,21 @@ export async function getUserGroups() {
 export async function inviteToGroup(groupId: string, email: string) {
   const inviteCode = nanoid(12);
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+  expiresAt.setDate(expiresAt.getDate() + 7);
 
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
 
+  // First get the group name
+  const { data: group } = await supabase
+    .from('gift_groups')
+    .select('name')
+    .eq('id', groupId)
+    .single();
+
+  if (!group) throw new Error('Group not found');
+
+  // Create the invite record
   const { data, error } = await supabase
     .from('group_invites')
     .insert({
@@ -95,6 +133,26 @@ export async function inviteToGroup(groupId: string, email: string) {
     .single();
 
   if (error) throw error;
+
+  // Send the email via Edge Function
+  const { error: emailError } = await supabase.functions.invoke('send-group-invite', {
+    body: {
+      email,
+      groupName: group.name,
+      inviteCode
+    }
+  });
+
+  if (emailError) {
+    console.error('Error sending invite email:', emailError);
+    // Optionally delete the invite if email fails
+    await supabase
+      .from('group_invites')
+      .delete()
+      .eq('id', data.id);
+    throw new Error('Failed to send invite email');
+  }
+
   return data;
 }
 
