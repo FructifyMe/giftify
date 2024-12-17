@@ -103,11 +103,14 @@ export async function getUserGroups() {
 }
 
 export async function inviteToGroup(groupId: string, email: string) {
+  console.log('Starting invite process:', { groupId, email });
+  
   const inviteCode = nanoid(12);
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
   const { data: user } = await supabase.auth.getUser();
+  console.log('Current user:', user);
   if (!user.user) throw new Error('Not authenticated');
 
   // First get the group name
@@ -117,22 +120,31 @@ export async function inviteToGroup(groupId: string, email: string) {
     .eq('id', groupId)
     .single();
 
+  console.log('Found group:', group);
   if (!group) throw new Error('Group not found');
+
+  const inviteData = {
+    group_id: groupId,
+    email,
+    invite_code: inviteCode,
+    expires_at: expiresAt.toISOString(),
+    created_by: user.user.id,
+  };
+  console.log('Attempting to insert invite:', inviteData);
 
   // Create the invite record
   const { data, error } = await supabase
     .from('group_invites')
-    .insert({
-      group_id: groupId,
-      email,
-      invite_code: inviteCode,
-      expires_at: expiresAt.toISOString(),
-      created_by: user.user.id,
-    })
+    .insert(inviteData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error creating invite:', error);
+    throw error;
+  }
+
+  console.log('Invite created successfully:', data);
 
   // Send the email via Edge Function
   const { error: emailError } = await supabase.functions.invoke('send-group-invite', {

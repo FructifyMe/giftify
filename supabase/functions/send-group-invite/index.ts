@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { Resend } from 'npm:resend'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
+const APP_URL = Deno.env.get('APP_URL') || 'http://localhost:5173'  // Update this with your actual domain
 
 serve(async (req) => {
   try {
@@ -16,7 +17,7 @@ serve(async (req) => {
           <h2 style="color: #2563eb;">You've been invited to join a gift group!</h2>
           <p>You've been invited to join <strong>${groupName}</strong> on Giftify.</p>
           <p>Click the button below to accept the invitation:</p>
-          <a href="http://localhost:5173/invite/${inviteCode}" 
+          <a href="${APP_URL}/invite/${inviteCode}" 
              style="display: inline-block; background-color: #2563eb; color: white; 
                     padding: 12px 24px; text-decoration: none; border-radius: 6px; 
                     margin: 16px 0;">
