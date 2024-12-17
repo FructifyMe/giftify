@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, Gift, Calendar, Tag, Sparkles } from 'lucide-react';
+import { Menu, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -14,12 +14,6 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
 
-  const navItems = [
-    { label: 'Wishlists', icon: Gift },
-    { label: 'Events', icon: Calendar },
-    { label: 'Sales', icon: Tag },
-  ];
-
   return (
     <nav className="fixed top-0 w-full z-50 glass-effect">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,18 +25,8 @@ export function Navbar() {
             </span>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="ghost"
-                className="flex items-center space-x-2 hover:text-primary transition-colors"
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </Button>
-            ))}
+          {/* Desktop User Menu */}
+          <div className="hidden md:flex items-center">
             {user ? (
               <UserMenu />
             ) : (
@@ -50,7 +34,7 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile Navigation */}
+          {/* Mobile User Menu */}
           <div className="md:hidden flex items-center">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
@@ -60,17 +44,6 @@ export function Navbar() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col space-y-4 mt-8">
-                  {navItems.map((item) => (
-                    <Button
-                      key={item.label}
-                      variant="ghost"
-                      className="flex items-center justify-start space-x-4 w-full"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </Button>
-                  ))}
                   {user ? (
                     <UserMenu />
                   ) : (
