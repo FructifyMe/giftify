@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,20 +21,23 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import * as z from 'zod';
+import { createEvent } from '@/lib/db/events';
+import type { Event } from '@/lib/db/events';
 
 const eventSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().max(500).optional(),
   date: z.string().min(1, 'Date is required'),
+  group_id: z.string().optional(),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
 
 interface CreateEventDialogProps {
   trigger?: React.ReactNode;
-  onEventCreated: (event: any) => void;
+  onEventCreated: (event: Event) => void;
 }
 
 export function CreateEventDialog({ trigger, onEventCreated }: CreateEventDialogProps) {
@@ -46,15 +49,14 @@ export function CreateEventDialog({ trigger, onEventCreated }: CreateEventDialog
     defaultValues: {
       title: '',
       description: '',
-      date: '',
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      // TODO: Implement createEvent function in db/events.ts
-      // const event = await createEvent(data);
-      // onEventCreated(event);
+      const event = await createEvent(data);
+      onEventCreated(event);
       toast({
         title: 'Success',
         description: 'Event created successfully!',
@@ -62,9 +64,10 @@ export function CreateEventDialog({ trigger, onEventCreated }: CreateEventDialog
       setOpen(false);
       form.reset();
     } catch (error) {
+      console.error('Error creating event:', error);
       toast({
         title: 'Error',
-        description: (error as Error).message,
+        description: error instanceof Error ? error.message : 'Failed to create event',
         variant: 'destructive',
       });
     }
@@ -84,7 +87,7 @@ export function CreateEventDialog({ trigger, onEventCreated }: CreateEventDialog
         <DialogHeader>
           <DialogTitle>Create Event</DialogTitle>
           <DialogDescription>
-            Create an event to plan gift-giving occasions with your group.
+            Create an event to plan gift-giving occasions.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -104,6 +107,22 @@ export function CreateEventDialog({ trigger, onEventCreated }: CreateEventDialog
             />
             <FormField
               control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add some details about the event..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="date"
               render={({ field }) => (
                 <FormItem>
@@ -115,25 +134,9 @@ export function CreateEventDialog({ trigger, onEventCreated }: CreateEventDialog
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add any additional details about the event..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full">
-              Create Event
-            </Button>
+            <div className="flex justify-end">
+              <Button type="submit">Create Event</Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

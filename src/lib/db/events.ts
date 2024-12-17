@@ -1,13 +1,13 @@
 import { supabase } from '@/lib/supabase/client';
 
-export interface GiftEvent {
+export interface Event {
   id: string;
+  created_by: string;
   title: string;
   description: string | null;
   date: string;
-  created_by: string;
-  group_id: string | null;
   created_at: string;
+  group_id: string | null;
 }
 
 export interface CreateEventData {
@@ -17,7 +17,7 @@ export interface CreateEventData {
   group_id?: string;
 }
 
-export async function createEvent(data: CreateEventData): Promise<GiftEvent> {
+export async function createEvent(data: CreateEventData): Promise<Event> {
   const { data: event, error } = await supabase
     .from('events')
     .insert({
@@ -36,20 +36,32 @@ export async function createEvent(data: CreateEventData): Promise<GiftEvent> {
   return event;
 }
 
-export async function getEvents(): Promise<GiftEvent[]> {
+export async function getEvents(): Promise<Event[]> {
   const { data: events, error } = await supabase
     .from('events')
-    .select('*')
+    .select(`
+      *,
+      gift_groups (
+        id,
+        name
+      )
+    `)
     .order('date', { ascending: true });
 
   if (error) throw error;
   return events || [];
 }
 
-export async function getEvent(id: string): Promise<GiftEvent> {
+export async function getEvent(id: string): Promise<Event> {
   const { data: event, error } = await supabase
     .from('events')
-    .select('*')
+    .select(`
+      *,
+      gift_groups (
+        id,
+        name
+      )
+    `)
     .eq('id', id)
     .single();
 
@@ -59,7 +71,7 @@ export async function getEvent(id: string): Promise<GiftEvent> {
   return event;
 }
 
-export async function updateEvent(id: string, data: Partial<CreateEventData>): Promise<GiftEvent> {
+export async function updateEvent(id: string, data: Partial<CreateEventData>): Promise<Event> {
   const { data: event, error } = await supabase
     .from('events')
     .update({
