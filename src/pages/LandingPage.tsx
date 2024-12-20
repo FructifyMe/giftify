@@ -33,7 +33,7 @@ export function LandingPage() {
         <div className="container mx-auto px-4 relative">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary mb-8 animate-float">
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Gift className="h-4 w-4 mr-2" />
               <span className="text-sm font-medium">Welcome to Giftify</span>
             </div>
             

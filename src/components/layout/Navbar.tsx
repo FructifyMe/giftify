@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, Sparkles } from 'lucide-react';
+import { Menu, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -20,7 +20,7 @@ export function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <span className="flex items-center text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-              <Sparkles className="h-5 w-5 mr-2 text-primary" />
+              <Gift className="h-5 w-5 mr-2 text-primary" />
               Giftify
             </span>
           </div>

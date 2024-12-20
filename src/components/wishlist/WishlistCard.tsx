@@ -16,7 +16,31 @@ export function WishlistCard({ item, onClaim }: WishlistCardProps) {
   const isOwner = user?.id === item.userId;
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop';
+    const img = e.currentTarget;
+    const url = img.src;
+    
+    // Try HTTPS if the URL is HTTP
+    if (url.startsWith('http:')) {
+      img.src = url.replace('http:', 'https:');
+      return;
+    }
+    
+    // If HTTPS also fails, use default fallback
+    img.src = 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop';
+  };
+
+  // Ensure HTTPS and handle special cases
+  const getImageUrl = (url: string) => {
+    if (!url) return null;
+    // Convert HTTP to HTTPS
+    if (url.startsWith('http:')) {
+      url = url.replace('http:', 'https:');
+    }
+    // Handle relative URLs
+    if (url.startsWith('/')) {
+      url = `https:${url}`;
+    }
+    return url;
   };
 
   return (
@@ -34,14 +58,16 @@ export function WishlistCard({ item, onClaim }: WishlistCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="aspect-square relative mb-4 bg-gray-100 rounded-lg overflow-hidden">
+        <div className="aspect-square relative mb-4 bg-gray-100 rounded-lg overflow-hidden max-h-[200px]">
           {item.imageUrl ? (
             <img
-              src={item.imageUrl}
+              src={getImageUrl(item.imageUrl)}
               alt={item.title}
               onError={handleImageError}
-              className="rounded-lg object-cover w-full h-full"
+              className="rounded-lg object-contain w-full h-full"
               loading="lazy"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
